@@ -4,6 +4,7 @@
 #include <algorithm>
 
 bool Folders::traverse_current_folder() {
+	SetLastError(0);
 	WIN32_FIND_DATA data;
 	HANDLE h = FindFirstFile(_T("*"), &data);
 	if (INVALID_HANDLE_VALUE == h) {
@@ -14,14 +15,15 @@ bool Folders::traverse_current_folder() {
 	SYSTEMTIME st;
 	do {
 		FileTimeToSystemTime(&data.ftCreationTime, &st);
-		_tprintf(_T("Name: %s, Size %d, Date: %d/%d/%d"), data.cFileName, data.nFileSizeLow, st.wDay, st.wMonth, st.wYear);
+		_tprintf(_T("Name: %s, Size %d, Date: %d/%d/%d\n"), data.cFileName, data.nFileSizeLow, st.wDay, st.wMonth, st.wYear);
 	} while (FindNextFile(h, &data));
-
-	FindClose(h);
-	/*if (GetLastError() != ) {
+	if (GetLastError() != ERROR_NO_MORE_FILES) {
 		error_text_output();
 		return false;
-	}*/
+	}
+
+	FindClose(h);
+	
 	return true;
 }
 
