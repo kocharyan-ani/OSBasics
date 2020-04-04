@@ -36,6 +36,51 @@ bool Files::copy_file(const TCHAR* name1, const TCHAR* name2) {
 }
 
 bool Files::copy_file_reversed(const TCHAR* name1, const TCHAR* name2) {
+	HANDLE h1 = CreateFile(name1, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
+	if (INVALID_HANDLE_VALUE == h1) {
+		error_text_output();
+		return false;
+	}
+
+	HANDLE h2 = CreateFile(name2, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (INVALID_HANDLE_VALUE == h2) {
+		CloseHandle(h1);
+		error_text_output();
+		return false;
+	}
+
+	if (SetFilePointer(h1, -1 * sizeof(TCHAR), NULL, FILE_END) == INVALID_SET_FILE_POINTER) {
+		CloseHandle(h1);
+		CloseHandle(h2);
+		error_text_output();
+		return false;
+	}
+
+	const int s = 1;
+	TCHAR buffer[s];
+	DWORD r = -1, w;
+	while (ReadFile(h1, buffer, s * sizeof(TCHAR), &r, NULL)) {
+		if (!WriteFile(h2, buffer, r, &w, NULL) || r != w) {
+			CloseHandle(h1);
+			CloseHandle(h2);
+			error_text_output();
+			return false;
+		}
+		if (SetFilePointer(h1, -2 * sizeof(TCHAR), NULL, FILE_END) == INVALID_SET_FILE_POINTER &&
+			GetLastError() != ERROR_NEGATIVE_SEEK) {
+			CloseHandle(h1);
+			CloseHandle(h2);
+			error_text_output();
+			return false;
+		}
+	}
+	CloseHandle(h1);
+	CloseHandle(h2);
+	if (r != 0) {
+		error_text_output();
+		return false;
+	}
+
 	return true;
 }
 

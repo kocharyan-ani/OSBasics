@@ -22,11 +22,13 @@
     <ClCompile Include="Files.cpp" />
     <ClCompile Include="Folders.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Processes.cpp" />
     <ClCompile Include="Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Files.h" />
     <ClInclude Include="Folders.h" />
+    <ClInclude Include="Processes.h" />
     <ClInclude Include="Utility.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <shellapi.h>
 
 bool Folders::traverse_current_folder() {
 	SetLastError(0);
@@ -71,7 +72,76 @@ bool Folders::word_count_of_files_in_current_folder() {
 	return true;
 }
 
-bool Folders::union_of_files(const TCHAR** names, int file_count, const TCHAR* name) {
+namespace {
+	bool copy_with_handles(HANDLE hIn, HANDLE hOut) {
+		const int s = 10;
+		BYTE buffer[s];
+		DWORD r = -1, w;
+		while (ReadFile(hIn, buffer, s, &r, NULL) && r != 0) {
+			if (!WriteFile(hOut, buffer, r, &w, NULL) || r != w) {
+				error_text_output();
+				return false;
+			}
+		}
+		if (r != 0) {
+			error_text_output();
+			return false;
+		}
+		return true;
+	}
+}
+
+// TEXT.txt
+bool Folders::union_of_files(const TCHAR* name) {
+	HANDLE hOut = CreateFile(name, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (INVALID_HANDLE_VALUE == hOut) {
+		error_text_output();
+		return false;
+	}
+
+	int argc{};
+	TCHAR** argv{};
+	argv = (TCHAR**)CommandLineToArgvW(GetCommandLineW(), &argc);
+	if (argv == NULL) {
+		error_text_output();
+		CloseHandle(hOut);
+		return false;
+	}
+	TCHAR dir[MAX_PATH];
+	_tcscpy_s(dir, (argc >= 2) ? argv[1] : _T("."));
+	_tcscat_s(dir, _T("//*.txt"));
+
+	WIN32_FIND_DATA info;
+	HANDLE hSearch = FindFirstFile(dir, &info);
+	if (INVALID_HANDLE_VALUE == hSearch) {
+		error_text_output();
+		CloseHandle(hOut);
+		return 1;
+	}
+
+	HANDLE hIn;
+	do {
+		if (_tcscmp(info.cFileName, name) == 0) {
+			continue;
+		}
+		hIn = CreateFile(info.cFileName, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
+		if (INVALID_HANDLE_VALUE == hIn) {
+			error_text_output();
+			CloseHandle(hOut);
+			FindClose(hSearch);
+			return 1;
+		}
+		if (!copy_with_handles(hIn, hOut)) {
+			_tprintf(_T("Copy failed for file %s\n"), info.cFileName);
+			CloseHandle(hOut);
+			FindClose(hSearch);
+			return 1;
+		}
+		CloseHandle(hIn);
+	} while (FindNextFile(hSearch, &info));
+
+	FindClose(hSearch);
+	CloseHandle(hOut);
 	return true;
 }
 
