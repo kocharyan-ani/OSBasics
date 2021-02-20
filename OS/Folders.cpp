@@ -42,7 +42,28 @@ namespace {
 	}
 
 	bool contains_sub_directory(const TCHAR* dir) {
-		return true;
+		TCHAR name[MAX_PATH];
+		_tcscpy_s(name, dir);
+		_tcscat_s(name, _T("\\\\*"));
+
+		WIN32_FIND_DATA data;
+		HANDLE h = FindFirstFile(name, &data);
+		if (INVALID_HANDLE_VALUE == h) {
+			error_text_output();
+			return false;
+		}
+
+		do {
+			if (is_directory(data.dwFileAttributes) && 
+				_tcscmp(data.cFileName, _T(".")) != 0 && 
+				_tcscmp(data.cFileName, _T("..")) != 0) {
+				FindClose(h);
+				return true;
+			}
+		} while (FindNextFile(h, &data));
+
+		FindClose(h);
+		return false;
 	}
 }
 

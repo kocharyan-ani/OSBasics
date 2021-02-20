@@ -6,9 +6,7 @@
 #include "Folders.h"
 
 int _tmain(int argc, TCHAR* argv[]) {
-
-	Folders::traverse_current_folder();
-
+	
 	/*if (argc > 3) {
 		_tprintf(_T("Console output before change of std output!\n"));	// output will be on console
 		Files::copy_file_to_std_output(argv[1]);	// output will be on console
